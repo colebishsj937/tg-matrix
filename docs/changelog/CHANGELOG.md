@@ -1,3 +1,19 @@
+## 2026-10-24 (send-result-log)
+
+### 模块：发信结果落库
+
+**变动类型：** 新增 / 优化
+
+**变动描述：**
+- 每条私信结果立即写入 `task_items` + `~/.tg-matrix-skills/logs/send_results.jsonl`
+- 发信与 HTTP 客户端断开解耦（`WithoutCancel`），避免超时丢记录
+- CLI：`tgmx send log`；Skill 要求发信后只读核对结果
+
+**影响范围：**
+- daemon messages/send_log/store；CLI；skills
+
+**变动人：** Auto
+
 ## 2026-10-24 (send-user-manual-only)
 
 ### 模块：skills 发信策略

@@ -3,7 +3,8 @@ name: tg-send-dm
 description: >-
   Prepare Telegram DM commands for the user to run manually. Never execute
   tgmx send or MCP send tools. Use when user asks to send DMs, 私信, 群发;
-  output ready-to-copy shell commands only.
+  output ready-to-copy shell commands only. After user sends, read recorded
+  results via tasks/send log.
 ---
 
 # TG Send DM
@@ -12,70 +13,73 @@ description: >-
 
 ## 硬性规则（Agent）
 
-1. **禁止执行**任何发信命令或 MCP：`tgmx send …`、`tgmx_send_dm`、`POST /v1/messages/send`（含 dry-run 与 `--confirm`）一律**不要在终端/工具里跑**。
-2. Agent **只生成**可复制的命令，交给**用户本机手动执行**。
-3. 可代为执行只读辅助（如 `tgmx accounts list`、`tgmx health`），用于拼命令；**不得**发信。
-4. 禁止编造「已发送 / 已送达 / 已读」。
+1. **禁止执行**任何发信命令或 MCP：`tgmx send dm …`（含 dry-run / `--confirm`）不要在终端代跑。
+2. Agent **只生成**可复制命令，由**用户本机手动执行**。
+3. 可代为执行只读：`health` / `accounts list` / **`send log`** / **`tasks …`**（查发送结果）。
+4. 禁止编造「已发送 / 已送达 / 已读」；结果以任务明细与 send-log 为准。
 
-## 调用路径（写给用户复制）
+## 调用路径
 
 ```bash
-export TGMX_ROOT="/path/to/tg-matrix"   # 用户本机 clone 根目录
+export TGMX_ROOT="/path/to/tg-matrix"
 # 须已启动: "$TGMX_ROOT/.bin/tgmxd"
 # 下文 tgmx = "$TGMX_ROOT/.bin/tgmx"
 ```
 
 ## Agent 输出流程
 
-1. 用只读命令弄清协议号（可执行：`tgmx accounts list`）。
-2. 与用户确认：账号、目标、文案、mode；每协议号间隔 ≥ 5 分钟。
-3. **在对话中贴出完整命令**（绝对路径优先），明确写：「请你在本机终端手动执行，我不会代发。」
-4. 用户执行后，如需解读结果，再根据用户粘贴的输出说明（仍不代跑发信）。
+1. 只读确认协议号：`tgmx accounts list`。
+2. 与用户确认账号、目标、文案；间隔 ≥ 5 分钟/号。
+3. 贴出完整命令，写明：「请手动执行，我不会代发。」
+4. **用户执行后**：Agent 用只读命令拉取并汇总**每条发送结果**（见下方「结果记录」）。
 
-### 预览命令（无 --confirm，仍由用户手动跑）
+### 预览 / 真实发送（仅用户手跑）
 
 ```bash
-"$TGMX_ROOT/.bin/tgmx" send dm --account <id> --to @username --text "你好" --mode username
+"$TGMX_ROOT/.bin/tgmx" send dm --accounts id1,id2 --targets-file targets.txt \
+  --text "..." --mode username --interval-ms 300000
+
+"$TGMX_ROOT/.bin/tgmx" send dm --accounts id1,id2 --targets-file targets.txt \
+  --text "..." --mode username --interval-ms 300000 --confirm
 ```
 
-### 真实发送（带 --confirm，仅用户手动）
+长批次请设：`export TGMX_HTTP_TIMEOUT_SEC=14400`（或 0 不超时）。
+
+## 结果记录（必查）
+
+服务端**每发出一条**立刻写入：
+
+1. SQLite 任务明细：`task_items`（`tgmx tasks items <taskId>`）
+2. JSONL 日志：`~/.tg-matrix-skills/logs/send_results.jsonl`
+
+用户跑完（或中途超时）后，Agent **应主动**只读查询并汇报：
 
 ```bash
-"$TGMX_ROOT/.bin/tgmx" send dm --account <id> --to @username --text "你好" --mode username --confirm
-```
+# 最近发信日志（每条一行：accountId/target/ok/error…）
+"$TGMX_ROOT/.bin/tgmx" send log --limit 50
 
-### 批量
-
-```bash
-"$TGMX_ROOT/.bin/tgmx" send dm --account <id> --targets-file targets.txt --text "..." --confirm \
-  --interval-ms 300000 --fail-stop 5
-```
-
-服务端强制：同一协议号发完一条后至少再等 **5 分钟**。多号轮询时不同号可交错。
-
-### 查任务（只读，Agent 可执行）
-
-```bash
+# 任务列表 → 取最新 messages 任务
 "$TGMX_ROOT/.bin/tgmx" tasks list
 "$TGMX_ROOT/.bin/tgmx" tasks items <taskId>
 ```
+
+汇报时按条列出：协议号、目标、成功/失败、`errorCode`（如 `PEER_FLOOD`），不要概括成「已全部发送」。
 
 ## mode
 
 | mode | 目标示例 | 注意 |
 |---|---|---|
-| username | `@foo` / `foo` | 最常用 |
-| phone | `86138...` | 隐私限制可能导致 unmatched |
-| userId | `123456` | 需本协议号已有 entity 缓存 |
+| username | `@foo` | 最常用 |
+| phone | `86138...` | 可能 unmatched |
+| userId | `123456` | 需同号 entity 缓存 |
 
-## 失败解读（用户贴日志后）
+## 失败解读
 
-- `FLOOD_WAIT`：等待后单次再试；勿建议死循环
-- `PEER_FLOOD` / 拉黑 / 隐私：该目标停发
-- 连续失败达 `fail-stop`：整批熔断
+- `FLOOD_WAIT`：等待后单次再试
+- `PEER_FLOOD` / 拉黑 / 隐私：该目标停，换号勿死循环
+- `fail-stop`：连续失败熔断；已成功条目仍在 log/tasks 中
 
 ## 禁止
 
-- Agent 自己跑 `send` / MCP 发信（含 dry-run）
-- 未经用户知情输出带 `--confirm` 却暗示「我已帮你发」
-- 编造发送结果
+- Agent 代跑 `send dm`
+- 编造发送结果；不查 log/tasks 就宣称成功

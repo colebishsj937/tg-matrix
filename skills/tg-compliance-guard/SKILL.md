@@ -24,7 +24,7 @@ export TGMX_ROOT="/path/to/tg-matrix"   # 改成你本机 git clone 根目录
 
 ## 硬性红线
 
-1. **发信禁止由 AI 执行**：凡 `tgmx send …` / MCP `tgmx_send_dm` / `POST /v1/messages/send`（含 dry-run 与 `--confirm`），Agent **只输出命令文案**，由**用户本机手动执行**；禁止在终端或工具里代跑。
+1. **发信禁止由 AI 执行**：凡 `tgmx send dm …` / MCP `tgmx_send_dm`（含 dry-run 与 `--confirm`），Agent **只输出命令文案**，由**用户本机手动执行**；禁止代跑。用户执行后须用只读 `tgmx send log` / `tgmx tasks items` **核对每条结果**，禁止编造。
 2. **其它写操作**（加退群 / 邀请等）默认无 `--confirm` 只预览；真实执行须用户明确同意；若策略要求，同样可只给命令让用户手跑。
 3. **禁止跨协议号复用 access_hash**：userId 发信只能用**同一协议号**缓存的实体。
 4. **守护进程仅本机**：`127.0.0.1:17999`；拒绝改绑公网。
