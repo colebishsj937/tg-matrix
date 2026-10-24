@@ -8,7 +8,8 @@ description: >-
 
 # TG Marketing Copy
 
-纯文案 Skill：输出候选话术，**不调用** `tgmxd` / `tgmx`。发送走 `tg-send-dm`（其调用路径见 `tg-daemon-ops`）。
+纯文案 Skill：输出候选话术，**不调用** `tgmxd` / `tgmx`。  
+需要发送时走 `tg-send-dm`：**只生成命令给用户手跑，禁止代发**。
 
 ## 输入（向用户收集或从文件读）
 

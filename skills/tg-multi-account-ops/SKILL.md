@@ -9,7 +9,8 @@ description: >-
 
 # TG Multi-Account Ops
 
-先读 `tg-compliance-guard` + `tg-daemon-ops`。发信默认 dry-run，须用户确认后再 `--confirm`。
+先读 `tg-compliance-guard` + `tg-daemon-ops`。  
+**发信**：Agent **不执行** `tgmx send`，只给出命令，由用户手动跑（见 `tg-send-dm`）。
 
 ## 调用路径
 
@@ -42,23 +43,25 @@ tgmx groups list --all
 
 单号：`tgmx groups refresh --account <id>` / `tgmx groups list --account <id>`
 
-### 3) 多号号池私信一批目标
+### 3) 多号号池私信（只给命令，用户手跑）
+
+Agent 在对话中贴出下列命令，并写明「请手动执行」——**禁止代跑**：
 
 ```bash
-# 预览（不发送）
-tgmx send dm --accounts id1,id2,id3 --targets-file targets.txt --text "你好" --mode username
+# 预览
+"$TGMX_ROOT/.bin/tgmx" send dm --accounts id1,id2,id3 --targets-file targets.txt --text "你好" --mode username
 
-# 用户确认后
-tgmx send dm --accounts id1,id2,id3 --targets-file targets.txt --text "你好" --confirm
+# 真实发送（用户确认后再自己加 --confirm 执行）
+"$TGMX_ROOT/.bin/tgmx" send dm --accounts id1,id2,id3 --targets-file targets.txt --text "你好" --confirm --interval-ms 300000
 ```
 
 目标按 `accountIds` **轮询分配**（第 i 个目标用 `accounts[i % len]`）。
 
-也可先 `tgmx accounts list` 取出全部 id，拼成 `--accounts`。
+也可先执行只读 `tgmx accounts list` 取出全部 id，再拼进命令文案。
 
 ## Agent 约束
 
 1. 刷新全号群前告知将连接 Telegram，可能较慢 / 触发限流
-2. 发信前展示 dry-run preview（账号池、目标数、文案）
-3. 未确认不加 `--confirm`
-4. 勿把 Session 内容贴进对话
+2. 发信：**只输出命令**，不执行 `send` / MCP 发信
+3. 勿把 Session 内容贴进对话
+4. 勿编造「已发送」

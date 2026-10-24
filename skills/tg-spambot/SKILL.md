@@ -35,4 +35,4 @@ tgmx spambot <accountId> --wait 8
 ## 禁止
 
 - 用 SpamBot 结果编造「已解封」
-- 受限号继续 `--confirm` 群发
+- 建议用户对受限号继续 `--confirm` 群发（发信命令仍由用户手跑，见 `tg-send-dm`）

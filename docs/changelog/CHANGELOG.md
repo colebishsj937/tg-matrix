@@ -1,3 +1,33 @@
+## 2026-10-24 (send-user-manual-only)
+
+### 模块：skills 发信策略
+
+**变动类型：** 优化
+
+**变动描述：**
+- `tg-send-dm` / `tg-compliance-guard` 等：Agent **禁止执行**发信（含 dry-run / MCP），只输出命令由用户手动执行
+- 同步 multi-account / marketing-pipeline / daemon-ops / marketing-copy
+
+**影响范围：**
+- skills/*
+
+**变动人：** Auto
+
+## 2026-10-24 (send-rate-5min)
+
+### 模块：私信发送限速
+
+**变动类型：** 优化
+
+**变动描述：**
+- 每协议号发信后至少等待 5 分钟（进程内跨请求生效）；`intervalMs` 只能调大
+- CLI/MCP 默认 `intervalMs=300000`
+
+**影响范围：**
+- daemon `api/messages.go`、`api/send_rate.go`、CLI、MCP、skills
+
+**变动人：** Auto
+
 ## 2026-10-24 (public-skills-github)
 
 ### 模块：公开仓库发布

@@ -54,9 +54,9 @@ CLI **只 HTTP 调本机 tgmxd**，本身不连 Telegram。
 ```bash
 "$TGMX_ROOT/.bin/tgmx" health
 "$TGMX_ROOT/.bin/tgmx" accounts list
-"$TGMX_ROOT/.bin/tgmx" send dm --account <id> --to @u --text "hi"
 ```
 
+发信命令见 `tg-send-dm`：**Agent 只生成命令文案，禁止代执行 `send`**。  
 其它 Skill 里的 `tgmx …` 均等价于 `"$TGMX_ROOT/.bin/tgmx" …`。
 
 ### 方式 C：HTTP / MCP
@@ -95,5 +95,6 @@ MCP：`mcp/src/index.js`，`TGMX_URL=http://127.0.0.1:17999`。
 ## 6. Agent 约定
 
 1. 确认 `.bin/tgmxd` 与 `.bin/tgmx` 存在；缺失则停并告知用户取二进制。
-2. 写接口前先 `tgmx health`；失败则启动 daemon，不要假装已执行。
-3. 命令里的 `tgmx` 实际执行一律换成 `"$TGMX_ROOT/.bin/tgmx"`。
+2. 只读/运维可先 `tgmx health`；失败则引导启动 daemon。
+3. 命令里的 `tgmx` 写成 `"$TGMX_ROOT/.bin/tgmx"`。
+4. **发信禁止代跑**：只把 `send` 命令交给用户手动执行（见 `tg-send-dm`）。

@@ -1,15 +1,14 @@
 ---
 name: tg-compliance-guard
 description: >-
-  TG Matrix Skills safety guardrails for Telegram multi-account operations.
-  Use before any Session import, DM send, scrape, or bulk action. Enforces
-  dry-run-first, explicit --confirm, no cross-account access_hash reuse, and
-  local-only daemon binding.
+  TG Matrix Skills safety guardrails. Use before Session import, DM, scrape, or
+  bulk action. Enforces: AI never executes send; user runs send commands
+  manually; no cross-account access_hash reuse; local-only daemon.
 ---
 
 # TG Compliance Guard
 
-在执行任何 `tgmx` / MCP 写操作前，先完成本检查清单。
+在执行任何 `tgmx` / MCP 操作前，先完成本检查清单。
 
 ## 调用路径
 
@@ -25,23 +24,24 @@ export TGMX_ROOT="/path/to/tg-matrix"   # 改成你本机 git clone 根目录
 
 ## 硬性红线
 
-1. **默认不得真实写操作**：`send dm` / `groups join|leave` / `invite` 无 `--confirm` 只预览；HTTP 需 `confirm:true`。
-2. **禁止跨协议号复用 access_hash**：userId 发信只能用**同一协议号**缓存的实体。
-3. **守护进程仅本机**：`127.0.0.1:17999`；拒绝改绑公网。
-4. **禁止把 Session / api_hash / 代理密码写入聊天、Skill、git、日志摘要**。
-5. **不自动群发/拉群/邀请**：批量目标必须用户明确确认名单后再 `--confirm`。
+1. **发信禁止由 AI 执行**：凡 `tgmx send …` / MCP `tgmx_send_dm` / `POST /v1/messages/send`（含 dry-run 与 `--confirm`），Agent **只输出命令文案**，由**用户本机手动执行**；禁止在终端或工具里代跑。
+2. **其它写操作**（加退群 / 邀请等）默认无 `--confirm` 只预览；真实执行须用户明确同意；若策略要求，同样可只给命令让用户手跑。
+3. **禁止跨协议号复用 access_hash**：userId 发信只能用**同一协议号**缓存的实体。
+4. **守护进程仅本机**：`127.0.0.1:17999`；拒绝改绑公网。
+5. **禁止把 Session / api_hash / 代理密码写入聊天、Skill、git、日志摘要**。
 6. **Flood / PEER_FLOOD**：停止该号硬重试；提示降频或换号，不循环轰炸。
-7. **采集/SpamBot**：仅对用户指定目标执行；勿把完整成员表、手机号贴进对话。
+7. **采集/SpamBot**：仅对用户指定目标；勿把完整成员表、手机号贴进对话。
 
-## 执行前清单（Agent 必须逐项确认）
+## 发信前清单（Agent）
 
-- [ ] 用户意图是本人授权的账号操作（非第三方未授权）
-- [ ] 目标列表来源清楚，已去重
-- [ ] 已展示 dry-run 预览（账号、mode、目标、文案摘要）
-- [ ] 用户明确同意真实发送（口头/文字确认）后才加 `--confirm`
-- [ ] 间隔与熔断：`interval-ms` ≥ 1500，`fail-stop` 默认 5
+- [ ] 已拼好完整命令（含 `TGMX_ROOT` 绝对路径）
+- [ ] 已向用户说明「请你手动在终端执行，我不会代发」
+- [ ] 目标列表来源清楚、已去重；文案已确认
+- [ ] 间隔：每协议号 ≥ 5 分钟（`interval-ms` ≥ 300000），`fail-stop` 默认 5
+- [ ] **未**调用任何发信 shell / MCP / HTTP
 
 ## 与其它 Skill 的关系
 
-- `tg-session-import` / `tg-send-dm` / `tg-daemon-ops` / `tg-groups-join-leave` / `tg-invite` / `tg-scrape` / `tg-marketing-pipeline` / `tg-spambot` 均依赖本 Skill。
-- 纯文案类（`tg-marketing-copy` / `tg-fit-scoring`）不触网，但仍禁止编造「已发送」结果。
+- `tg-send-dm`：只生成发信命令，不执行。
+- `tg-session-import` / `tg-daemon-ops` / `tg-groups-join-leave` / `tg-invite` / `tg-scrape` / `tg-marketing-pipeline` / `tg-spambot` 均依赖本 Skill。
+- 纯文案类（`tg-marketing-copy` / `tg-fit-scoring`）不触网，禁止编造「已发送」。

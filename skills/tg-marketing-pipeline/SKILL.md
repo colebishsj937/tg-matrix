@@ -7,7 +7,8 @@ description: >-
 
 # TG Marketing Pipeline
 
-先读 `tg-compliance-guard` + `tg-daemon-ops`。发信环节走 `tg-send-dm`（默认 dry-run）。
+先读 `tg-compliance-guard` + `tg-daemon-ops`。  
+发信环节走 `tg-send-dm`：**只生成命令，由用户手动执行，Agent 不代发**。
 
 ## 调用路径
 
@@ -48,15 +49,17 @@ tgmx marketing leads <productId>
 - 用 Skill `tg-marketing-copy` 生成私信文案
 - 需要时可 PATCH 线索状态（MCP / HTTP）
 
-## 4) 私信（必须 dry-run → 确认）
+## 4) 私信（只贴命令，用户手跑）
+
+在对话中给出完整命令并注明「请手动执行」：
 
 ```bash
-tgmx send dm --accounts id1,id2 --targets-file hot-leads.txt --text "..."
-# 用户确认后
-tgmx send dm --accounts id1,id2 --targets-file hot-leads.txt --text "..." --confirm
+"$TGMX_ROOT/.bin/tgmx" send dm --accounts id1,id2 --targets-file hot-leads.txt --text "..." --interval-ms 300000
+# 用户确认后自行执行：
+"$TGMX_ROOT/.bin/tgmx" send dm --accounts id1,id2 --targets-file hot-leads.txt --text "..." --confirm --interval-ms 300000
 ```
 
 ## 禁止
 
-- 跳过 dry-run 直接群发
-- 编造「已转化/已成交」
+- Agent 执行任何 `tgmx send` / MCP 发信
+- 编造「已发送 / 已转化 / 已成交」
