@@ -304,7 +304,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
           text: a.text,
           mode: a.mode || "username",
           confirm: !!a.confirm,
-          intervalMs: a.intervalMs || 1500,
+          intervalMs: a.intervalMs || 300000,
           failStopAfter: a.failStopAfter || 5,
         });
         break;
