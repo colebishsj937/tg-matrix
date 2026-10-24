@@ -1,0 +1,16 @@
+# 本地运行产物
+.bin/
+dist/
+node_modules/
+mcp/node_modules/
+mcp/dist/
+*.session
+*.session.json
+.DS_Store
+.env
+*.db
+*.db-*
+
+# 不公开：守护进程源码与编译脚本（仅本机保留）
+daemon/
+scripts/
